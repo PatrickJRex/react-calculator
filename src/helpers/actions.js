@@ -6,5 +6,7 @@ export const ACTIONS = {
     REMOVE_DIGIT: 'delete-digit',
     CLEAR: 'clear',
     CHOSE_OPERATION: 'choose-operation',
-    EVALUATE: 'evaluate'
+    EVALUATE: 'evaluate',
+    TO_DECIMAL: 'to-decimal',
+    INVERT: 'invert'
 };
