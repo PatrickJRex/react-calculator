@@ -3,53 +3,70 @@ import NumButton from "./NumButton";
 import OpButton from "./OpButton";
 import TopScreen from './TopScreen';
 import { ACTIONS } from "../helpers/actions";
-import evaluate  from "../helpers/math";
+import { evaluate, toDecimal, inversion } from "../helpers/math";
 
 function reducer(state, {type, payload}) {
-
-    switch(type) {
+    switch (type) {
         case ACTIONS.ADD_DIGIT: 
-        if(payload.digit === "0" && state.currentOperand === "0") return state;
-        if(payload.digit === "." && state.currentOperand.includes('.')) return state;
-         return {
-            ...state,
-            currentOperand: `${state.currentOperand || ""}${payload.digit}`,
-            prevOperand: `${state.prevOperand || ""}${payload.digit}`
-           }
-        case ACTIONS.REMOVE_DIGIT: 
+        if(state.overwrite) {
+            return {
+                ...state,
+                overwrite: false,
+                currentOperand: payload.digit
+            }
+        }
+        if(payload.digit === "." && state.currentOperand.includes(".")) return state;
         return {
             ...state, 
-            currentOperand: `${state.currentOperand || ''}`
+            currentOperand: `${state.currentOperand || ''}${payload.digit}`
         }
-     
         case ACTIONS.CHOSE_OPERATION: 
-        if(state.currentOperand == null && state.prevOperand == null) {
+        if(state.prevOperand == null && state.currentOperand == null) {
             return state;
         }
-
+        if(state.currentOperand == null) {
+            return {
+                ...state,
+                operation: payload.op
+            }
+        }
         if(state.prevOperand == null) {
             return {
                 ...state,
-                operation: payload.op,
                 prevOperand: state.currentOperand,
-                currentOperand: null
+                currentOperand: null,
+                operation: payload.op
             }
         }
-
         return {
-          ...state,
-          prevOperand: evaluate(state),
-          operation: payload.op,
-          currentOperand: null
-         }
-
-         case ACTIONS.CLEAR: 
-         return {
+            ...state, 
+            operation: payload.op,
+            prevOperand: evaluate(state),
+            currentOperand: null
+        }
+        case ACTIONS.EVALUATE:
+            if(state.currentOperand === null || state.prevOperand === null || state.operation === null) {
+               return state;
+            }
+        return {
             ...state,
-            currentOperand: "",
-            prevOperand: "",
-            operation: ""
-         };
+            overwrite: true,
+            prevOperand: null,
+            operation: null,
+            currentOperand: evaluate(state)
+        }
+        case ACTIONS.TO_DECIMAL: 
+        return {
+            ...state,
+            currentOperand: toDecimal(state.currentOperand)
+        }
+        case ACTIONS.INVERT: 
+        return {
+            ...state,
+            currentOperand: inversion(state.currentOperand)
+        }
+        case ACTIONS.CLEAR: 
+        return {}
     }
 
 }
@@ -62,8 +79,8 @@ const Controls = () => {
         <TopScreen currentOperand={currentOperand} prevOperand={prevOperand} operation={operation} />
         <div className="calculator-buttons">
            <button className="button--op" onClick={() => dispatch({type: ACTIONS.CLEAR})}>C</button>
-           <OpButton dispatch={dispatch} op="+/-" />
-           <OpButton dispatch={dispatch} op="%" />
+           <button className="button--op" onClick={() => dispatch({type: ACTIONS.INVERT})}>+/-</button>
+           <button className="button--op" onClick={() => dispatch({type: ACTIONS.TO_DECIMAL})}>%</button>
            <OpButton dispatch={dispatch} op="+" />   
            <NumButton dispatch={dispatch} digit="7" />
            <NumButton dispatch={dispatch} digit="8" />
@@ -79,7 +96,7 @@ const Controls = () => {
            <OpButton dispatch={dispatch} op="÷" />
            <NumButton dispatch={dispatch} digit="0" />
            <NumButton dispatch={dispatch} digit="." />
-           <OpButton dispatch={dispatch} op="=" />
+           <button className="button--op" onClick={()=>dispatch({type: ACTIONS.EVALUATE})}>=</button>
         </div>
         </>
     );
